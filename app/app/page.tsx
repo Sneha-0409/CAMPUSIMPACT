@@ -14,6 +14,8 @@ import ProposalCard from '@/components/proposals/ProposalCard';
 import { dashboardStats, mockProposals } from '@/lib/mockData';
 import { staggerContainer, fadeInUp, scaleIn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import StudentDashboardPanel from '@/components/dashboard/StudentDashboardPanel';
+import ReviewerDashboardPanel from '@/components/dashboard/ReviewerDashboardPanel';
 
 const iconMap: Record<string, React.ElementType> = {
     Wallet, FileText, Zap, Trophy,
@@ -22,15 +24,20 @@ const iconMap: Record<string, React.ElementType> = {
 export default function DashboardPage() {
     const router = useRouter();
     const [authChecked, setAuthChecked] = useState(false);
+    const [role, setRole] = useState<'student' | 'faculty' | 'alumni' | null>(null);
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 router.push('/auth/login');
-            } else {
-                setAuthChecked(true);
+                return;
             }
-        });
+            const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+            setRole(profile?.role || null);
+            setAuthChecked(true);
+        };
+        checkAuth();
     }, [router]);
 
     if (!authChecked) {
@@ -181,8 +188,12 @@ export default function DashboardPage() {
                 </GlassCard>
             </div>
 
+            {/* Role-Specific Dashboard Inject */}
+            {role === 'student' && <StudentDashboardPanel proposals={activeProposals} />}
+            {(role === 'faculty' || role === 'alumni') && <ReviewerDashboardPanel role={role} proposals={activeProposals} />}
+
             {/* Active Proposals */}
-            <div>
+            <div className="mt-12 pt-8 border-t border-white/5">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-display-sm font-bold text-text-primary">Active Proposals</h2>
