@@ -24,13 +24,27 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
                 .eq('id', session.user.id)
                 .single();
 
-            // If no role has been chosen and they are not already on the onboarding page
+            // AUTO-MAGIC ROLE ASSIGNMENT:
+            // If they just logged in after picking a role on the landing page (saved in localStorage)
+            const intendedRole = localStorage.getItem('intended_role');
+            if (intendedRole && !profile?.role) {
+                // Update their profile instantly in the background!
+                await supabase.from('profiles').update({ role: intendedRole as UserRole, id_verified: 'pending' }).eq('id', session.user.id);
+                localStorage.removeItem('intended_role');
+                
+                // Now they have a role, so let them skip onboarding!
+                router.push('/app');
+                setLoading(false);
+                return;
+            }
+
+            // Normal Fallback logic: If no role chosen and no localStorage (e.g. direct link)
             if (!profile?.role && pathname !== '/app/onboarding') {
                 router.push('/app/onboarding');
             } 
             // If they have a role, never let them see the onboarding page again
             else if (profile?.role && pathname === '/app/onboarding') {
-                router.push(`/app`); // We will make a dynamic router for this later
+                router.push(`/app`); 
             }
             
             setLoading(false);

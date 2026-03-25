@@ -114,7 +114,7 @@ export default function LandingPage() {
               </p>
             </motion.div>
             <motion.div variants={fadeInUp} className="flex items-center gap-4 flex-wrap">
-              <Link href="/app">
+              <Link href="/auth/role">
                 <PrimaryButton className="text-body-md px-8 py-4 gap-2">
                   Launch App <ArrowRight className="w-4 h-4" />
                 </PrimaryButton>
@@ -284,7 +284,7 @@ export default function LandingPage() {
               <h2 className="text-display-md font-bold text-text-primary mb-4 text-balance">Ready to fund the next <span className="gradient-text">breakthrough?</span></h2>
               <p className="text-body-lg text-text-secondary mb-10 max-w-xl mx-auto">Join 4,287 token holders shaping the future of Indian student innovation. Connect your wallet and start voting today.</p>
               <div className="flex items-center justify-center gap-4 flex-wrap">
-                <Link href="/app"><PrimaryButton className="text-body-md px-10 py-4 gap-2">Launch App <ArrowRight className="w-4 h-4" /></PrimaryButton></Link>
+                <Link href="/auth/role"><PrimaryButton className="text-body-md px-10 py-4 gap-2">Launch App <ArrowRight className="w-4 h-4" /></PrimaryButton></Link>
                 <Link href="/app/submit"><SecondaryButton className="text-body-md px-10 py-4">Submit a Proposal</SecondaryButton></Link>
               </div>
               <p className="text-caption text-text-muted mt-8">No KYC required · Open to all Indian university students · 100% on-chain</p>
