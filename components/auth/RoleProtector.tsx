@@ -39,13 +39,13 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
             }
 
             // Normal Fallback logic: If no role chosen and no localStorage (e.g. direct link)
-            if (!profile?.role && pathname !== '/app/onboarding') {
-                router.push('/app/onboarding');
-            } 
-            // If they have a role, never let them see the onboarding page again
-            else if (profile?.role && pathname === '/app/onboarding') {
-                router.push(`/app`); 
-            }
+            // if (!profile?.role && pathname !== '/app/onboarding') {
+            //     router.push('/app/onboarding');
+            // } 
+            // // If they have a role, never let them see the onboarding page again
+            // else if (profile?.role && pathname === '/app/onboarding') {
+            //     router.push(`/app`); 
+            // }
             
             setLoading(false);
         };
