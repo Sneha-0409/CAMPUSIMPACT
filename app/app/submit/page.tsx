@@ -71,15 +71,35 @@ export default function SubmitProposalPage() {
     };
 
     const addMilestone = () => {
-        if (form.milestones.length < 6) {
+        if (form.milestones.length < 5) {
             setForm(prev => ({ ...prev, milestones: [...prev.milestones, { ...initialMilestone }] }));
         }
     };
 
     const removeMilestone = (index: number) => {
-        if (form.milestones.length > 1) {
-            setForm(prev => ({ ...prev, milestones: prev.milestones.filter((_, i) => i !== index) }));
+        setForm(prev => ({ ...prev, milestones: prev.milestones.filter((_, i) => i !== index) }));
+    };
+
+    const handleNext = () => {
+        if (currentStep === 1) {
+            if (!form.title || !form.description || !form.category || !form.university) { alert('Please fill out all basic project info.'); return; }
         }
+        if (currentStep === 2) {
+            if (!form.fundingAmount || !form.duration) { alert('Please specify funding amount and duration.'); return; }
+        }
+        if (currentStep === 3) {
+            if (form.milestones.length < 3 || form.milestones.length > 5) {
+                alert('You must clearly define between 3 and 5 milestones for fund disbursement.'); return;
+            }
+            const total = form.milestones.reduce((sum, m) => sum + (parseInt(m.allocation) || 0), 0);
+            if (total !== 100) {
+                alert(`Total fund allocation across milestones must equal exactly 100%. Currently it is ${total}%.`); return;
+            }
+            if (form.milestones.some(m => !m.title || !m.description || !m.allocation || !m.dueDate)) {
+                alert('Please ensure all milestone boxes are completely filled out.'); return;
+            }
+        }
+        setCurrentStep(prev => prev + 1);
     };
 
     const handleSubmit = async () => {
@@ -282,7 +302,7 @@ export default function SubmitProposalPage() {
                                 <h2 className="text-heading-lg font-semibold text-text-primary">Project Milestones</h2>
                                 <button
                                     onClick={addMilestone}
-                                    disabled={form.milestones.length >= 6}
+                                    disabled={form.milestones.length >= 5}
                                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-body-sm text-primary-light bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     <Plus className="w-4 h-4" /> Add Milestone
@@ -373,7 +393,7 @@ export default function SubmitProposalPage() {
                 </SecondaryButton>
 
                 {currentStep < 4 ? (
-                    <PrimaryButton onClick={() => setCurrentStep(prev => Math.min(4, prev + 1))} className="gap-2">
+                    <PrimaryButton onClick={handleNext} className="gap-2">
                         Next <ChevronRight className="w-4 h-4" />
                     </PrimaryButton>
                 ) : (
