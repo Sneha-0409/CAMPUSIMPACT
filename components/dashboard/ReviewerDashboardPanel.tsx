@@ -6,24 +6,54 @@ import { Star, FileText, CheckCircle2, ChevronDown, UserSquare2 } from 'lucide-r
 import GlassCard from '@/components/ui/GlassCard';
 import { PrimaryButton } from '@/components/ui/Button';
 import { Proposal } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 export default function ReviewerDashboardPanel({ role, proposals }: { role: 'faculty' | 'alumni', proposals: Proposal[] }) {
     // Basic rubric state for demonstration without writing it to DB yet
     const [evaluating, setEvaluating] = useState<string | null>(null);
     const [scores, setScores] = useState({ impact: 0, technical: 0, sustainability: 0 });
 
+    const [submitting, setSubmitting] = useState(false);
+
     const totalScore = scores.impact + scores.technical + scores.sustainability;
-    const voteWeight = role === 'faculty' ? 1.5 : 1.2;
+    const maxWeight = role === 'faculty' ? 1.5 : 1.2;
     const roleTitle = role.charAt(0).toUpperCase() + role.slice(1);
 
     const handleScoreSelect = (category: string, value: number) => {
         setScores(prev => ({ ...prev, [category]: value }));
     };
 
-    const submitEvaluation = () => {
-        alert(`Evaluation Submitted! Score: ${totalScore}/15. Your Weighted Vote (${voteWeight}x) will be calculated based on this score.`);
-        setEvaluating(null);
-        setScores({ impact: 0, technical: 0, sustainability: 0 });
+    const submitEvaluation = async () => {
+        setSubmitting(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Not logged in');
+
+            // Math: (Score / 15) * MaxWeight
+            // e.g. Faculty gets 15/15 = 100% * 1.5 = 1.5 Yes Votes. 
+            // e.g. Faculty gets 10/15 = 66% * 1.5 = 1.0 Yes Votes.
+            const percentage = totalScore / 15.0;
+            const finalVoteWeight = parseFloat((percentage * maxWeight).toFixed(2));
+
+            const { error } = await supabase.from('votes').insert({
+                proposal_id: evaluating,
+                voter_id: session.user.id,
+                voter_role: role,
+                score: totalScore,
+                weight_cast: finalVoteWeight
+            });
+
+            if (error) throw error;
+            
+            alert(`Evaluation submitted! Your rubric score of ${totalScore}/15 translated to ${finalVoteWeight} YES votes cast towards this project.`);
+            setEvaluating(null);
+            setScores({ impact: 0, technical: 0, sustainability: 0 });
+        } catch (err: any) {
+            console.error(err);
+            alert('Failed to cast weighted vote. Have you already voted on this project?');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -33,7 +63,7 @@ export default function ReviewerDashboardPanel({ role, proposals }: { role: 'fac
                     <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
                         {roleTitle} Evaluation Workspace
                     </h2>
-                    <p className="text-gray-400 text-sm mt-1">Review student projects using the official DAO rubric. (Voting Power: {voteWeight}x)</p>
+                    <p className="text-gray-400 text-sm mt-1">Review student projects using the official DAO rubric. (Max Voting Power: {maxWeight}x)</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 font-medium text-sm">
                     <UserSquare2 className="w-4 h-4" />
@@ -109,7 +139,8 @@ export default function ReviewerDashboardPanel({ role, proposals }: { role: 'fac
                                                 </div>
                                                 <PrimaryButton
                                                     onClick={submitEvaluation}
-                                                    disabled={totalScore === 0}
+                                                    disabled={totalScore === 0 || submitting}
+                                                    loading={submitting}
                                                     className="shadow-lg shadow-blue-500/20 gap-2 disabled:opacity-50"
                                                 >
                                                     Submit Rubric <CheckCircle2 className="w-4 h-4" />
@@ -135,7 +166,7 @@ export default function ReviewerDashboardPanel({ role, proposals }: { role: 'fac
                         </div>
                         <p className="text-gray-400 text-sm">You haven't evaluated any projects yet.</p>
                         <p className="text-xs text-gray-500 mt-2 max-w-[200px] mx-auto">
-                            Submit your first rubric to cast your weighted {voteWeight}x votes automatically.
+                            Submit your first rubric to cast your weighted {maxWeight}x votes automatically.
                         </p>
                     </div>
                 </GlassCard>
