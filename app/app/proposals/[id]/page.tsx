@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import {
     ArrowLeft, ExternalLink, CheckCircle, Clock,
-    Zap, Shield, AlertCircle
+    Zap, Shield, AlertCircle, ChevronDown, CheckCircle2, X
 } from 'lucide-react';
 import { mockProposals } from '@/lib/mockData';
 import GlassCard from '@/components/ui/GlassCard';
@@ -17,7 +17,7 @@ import { SuccessButton, DangerButton, PrimaryButton, SecondaryButton } from '@/c
 import StatusBadge from '@/components/ui/StatusBadge';
 import VoteBar from '@/components/ui/VoteBar';
 import CountdownTimer from '@/components/ui/CountdownTimer';
-import { formatCurrency, formatDate, getVotePercentage, getQuorumPercentage, staggerContainer, fadeInUp } from '@/lib/utils';
+import { formatCurrency, formatDate, getVotePercentage, getQuorumPercentage, staggerContainer, fadeInUp, parseProposalDescription } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useAccount } from 'wagmi';
 
@@ -30,6 +30,10 @@ export default function ProposalDetailPage() {
     const [voting, setVoting] = useState(false);
     const [votesYes, setVotesYes] = useState(0);
     const [votesNo, setVotesNo] = useState(0);
+
+    const [role, setRole] = useState<'student' | 'faculty' | 'alumni' | null>(null);
+    const [evaluating, setEvaluating] = useState(false);
+    const [scores, setScores] = useState({ problem: 0, technical: 0, innovation: 0, sustainability: 0 });
 
     useEffect(() => {
         const fetchProposal = async () => {
@@ -84,21 +88,24 @@ export default function ProposalDetailPage() {
         if (!params.id) return;
 
         const checkVote = async () => {
-            // Fetch live vote counts
+            // Fetch live vote weights
             const { data: yesData } = await supabase
                 .from('votes')
-                .select('id', { count: 'exact' })
+                .select('weight_cast')
                 .eq('proposal_id', params.id)
                 .eq('choice', 'yes');
 
             const { data: noData } = await supabase
                 .from('votes')
-                .select('id', { count: 'exact' })
+                .select('weight_cast')
                 .eq('proposal_id', params.id)
                 .eq('choice', 'no');
 
-            setVotesYes(yesData ? yesData.length : 0);
-            setVotesNo(noData ? noData.length : 0);
+            const yesSum = yesData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+            const noSum = noData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+
+            setVotesYes(yesSum);
+            setVotesNo(noSum);
 
             // Check if this wallet has already voted (runs when address loads too)
             const walletAddress = address;
@@ -113,6 +120,12 @@ export default function ProposalDetailPage() {
                 if (myVote) {
                     setVoted(myVote.choice as 'yes' | 'no');
                 }
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                if (profile) setRole(profile.role);
             }
         };
 
@@ -137,6 +150,8 @@ export default function ProposalDetailPage() {
         );
     }
 
+    const parsedDesc = parseProposalDescription(proposal.description);
+
     getVotePercentage(votesYes, votesNo);
     const quorumPct = getQuorumPercentage(votesYes + votesNo, proposal.quorumRequired);
     const isActive = proposal.status === 'active';
@@ -155,7 +170,8 @@ export default function ProposalDetailPage() {
                 .insert([{
                     proposal_id: params.id,
                     voter_address: address,
-                    choice: choice
+                    choice: choice,
+                    weight_cast: 1
                 }]);
 
             if (error) {
@@ -174,6 +190,50 @@ export default function ProposalDetailPage() {
         } catch (err) {
             console.error('Vote error:', err);
             alert('Failed to submit vote. Please try again.');
+        } finally {
+            setVoting(false);
+        }
+    };
+
+    const handleScoreSelect = (category: string, value: number) => {
+        setScores(prev => ({ ...prev, [category]: value }));
+    };
+
+    const totalScore = scores.problem + scores.technical + scores.innovation + scores.sustainability;
+    const maxWeight = role === 'faculty' ? 1.5 : (role === 'alumni' ? 1.2 : 1.0);
+
+    const submitEvaluation = async () => {
+        if (!address) {
+            alert('Please connect your wallet to evaluate!');
+            return;
+        }
+        setVoting(true);
+        try {
+            const percentage = totalScore / 20.0;
+            const finalVoteWeight = parseFloat((percentage * maxWeight).toFixed(2));
+
+            const { error } = await supabase.from('votes').insert({
+                proposal_id: params.id,
+                voter_address: address,
+                voter_role: role,
+                score: totalScore,
+                weight_cast: finalVoteWeight,
+                choice: 'yes'
+            });
+
+            if (error) {
+                if (error.code === '23505') {
+                    alert('You have already evaluated this project!');
+                } else throw error;
+            } else {
+                setVoted('yes');
+                setVotesYes(v => v + finalVoteWeight);
+                alert(`Evaluation submitted! Your rubric score of ${totalScore}/20 translated to ${finalVoteWeight} YES votes.`);
+                setEvaluating(false);
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert('Failed to submit evaluation. Have you already evaluated this project?');
         } finally {
             setVoting(false);
         }
@@ -224,7 +284,7 @@ export default function ProposalDetailPage() {
                             <FileIcon /> Overview
                         </h2>
                         <div className="prose prose-invert max-w-none">
-                            {proposal.fullDescription.split('\n\n').map((para, i) => (
+                            {parsedDesc.mainText.split('\n\n').map((para: string, i: number) => (
                                 <p key={i} className="text-body-md text-text-secondary leading-relaxed mb-4 last:mb-0">{para}</p>
                             ))}
                         </div>
@@ -339,28 +399,56 @@ export default function ProposalDetailPage() {
                                             <p className="text-caption text-text-muted mt-1">Recorded on Polygon</p>
                                         </div>
                                     ) : (
-                                        <div className="flex gap-3">
-                                            <SuccessButton
-                                                fullWidth
-                                                loading={voting}
-                                                onClick={() => handleVote('yes')}
-                                                className="py-3.5"
-                                            >
-                                                ✓ Vote YES
-                                            </SuccessButton>
-                                            <DangerButton
-                                                fullWidth
-                                                loading={voting}
-                                                onClick={() => handleVote('no')}
-                                                className="py-3.5"
-                                            >
-                                                ✗ Vote NO
-                                            </DangerButton>
-                                        </div>
+                                        role === 'faculty' || role === 'alumni' ? (
+                                            <div className="space-y-3">
+                                                <PrimaryButton
+                                                    fullWidth
+                                                    className="py-3.5"
+                                                    disabled={proposal.milestones.length < 3}
+                                                    onClick={() => setEvaluating(true)}
+                                                >
+                                                    Evaluate Proposal
+                                                </PrimaryButton>
+                                                {proposal.milestones.length < 3 && (
+                                                    <p className="text-caption text-danger text-center">
+                                                        Requires minimum 3 milestones to be evaluated.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <div className="flex gap-3">
+                                                    <SuccessButton
+                                                        fullWidth
+                                                        loading={voting}
+                                                        onClick={() => handleVote('yes')}
+                                                        className="py-3.5"
+                                                        disabled={proposal.milestones.length < 3}
+                                                    >
+                                                        ✓ Vote YES
+                                                    </SuccessButton>
+                                                    <DangerButton
+                                                        fullWidth
+                                                        loading={voting}
+                                                        onClick={() => handleVote('no')}
+                                                        className="py-3.5"
+                                                    >
+                                                        ✗ Vote NO
+                                                    </DangerButton>
+                                                </div>
+                                                {proposal.milestones.length < 3 && (
+                                                    <p className="text-caption text-danger text-center">
+                                                        Requires minimum 3 milestones to be upvoted.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )
                                     )}
 
                                     <div className="text-center">
-                                        <p className="text-caption text-text-muted">Your voting power: <span className="text-text-secondary font-semibold">12,500 CIMP</span></p>
+                                        <p className="text-caption text-text-muted">
+                                            Max voting power: <span className="text-text-secondary font-semibold">{maxWeight}x multiplier</span>
+                                        </p>
                                     </div>
                                 </>
                             ) : (
@@ -371,24 +459,7 @@ export default function ProposalDetailPage() {
                                 </div>
                             )}
 
-                            {/* Quorum */}
-                            <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                                <div className="flex justify-between">
-                                    <span className="text-caption text-text-muted">Quorum Progress</span>
-                                    <span className="text-caption text-text-secondary font-semibold">{quorumPct}%</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                                    <motion.div
-                                        className="h-full bg-gradient-to-r from-primary to-accent-blue rounded-full"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${quorumPct}%` }}
-                                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as any }}
-                                    />
-                                </div>
-                                <p className="text-caption text-text-muted">
-                                    {proposal.totalVoters.toLocaleString()} / {proposal.quorumRequired.toLocaleString()} required
-                                </p>
-                            </div>
+
                         </GlassCard>
                     </div>
 
@@ -430,6 +501,115 @@ export default function ProposalDetailPage() {
                     </GlassCard>
                 </div>
             </div>
+
+            {/* Evaluation Modal */}
+            <AnimatePresence>
+                {evaluating && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm overflow-y-auto"
+                    >
+                        <div className="flex min-h-full items-start justify-center p-4 py-8 sm:py-12">
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="w-full max-w-lg"
+                            >
+                                <GlassCard className="p-6 md:p-8 space-y-6 relative border-primary/20 shadow-2xl shadow-primary/10 mt-8 mb-8">
+                                    <button
+                                        onClick={() => setEvaluating(false)}
+                                        className="absolute top-4 left-4 p-2 text-text-muted hover:text-text-primary bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                    
+                                    <div className="pl-10">
+                                        <h3 className="text-2xl font-bold text-text-primary">Evaluate Proposal</h3>
+                                        <p className="text-body-sm text-text-muted mt-1">Score the proposal across 4 key metrics to cast your weighted vote.</p>
+                                    </div>
+
+                                <div className="space-y-5">
+                                    {[
+                                        { id: 'problem', label: 'Problem Definition & Research Depth' },
+                                        { id: 'technical', label: 'Technical Feasibility & Methodology' },
+                                        { id: 'innovation', label: 'Innovation & Academic Originality' },
+                                        { id: 'sustainability', label: 'Long Term Run' }
+                                    ].map((cat) => (
+                                        <div key={cat.id} className="space-y-3 bg-white/[0.02] p-4 rounded-xl border border-white/[0.05]">
+                                            <div className="flex justify-between items-baseline mb-2">
+                                                <p className="text-body-sm font-semibold text-text-primary">{cat.label}</p>
+                                                <span className="text-caption font-bold text-primary-light">{scores[cat.id as keyof typeof scores]}/5</span>
+                                            </div>
+
+                                            {/* Show the applicant's answer! */}
+                                            {parsedDesc.answers && parsedDesc.answers[cat.id] ? (
+                                                <div className="bg-black/20 p-3 rounded-md border border-white/[0.05]">
+                                                    <p className="text-body-sm text-text-secondary leading-relaxed">"{parsedDesc.answers[cat.id]}"</p>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-black/20 p-3 rounded-md border border-white/[0.05] border-dashed">
+                                                    <p className="text-body-sm text-text-muted italic">No answer provided by the student for this criteria.</p>
+                                                </div>
+                                            )}
+
+                                            <div className="flex gap-2 pt-2">
+                                                {[1, 2, 3, 4, 5].map((num) => (
+                                                    <button
+                                                        key={num}
+                                                        onClick={() => handleScoreSelect(cat.id, num)}
+                                                        className={cn(
+                                                            'flex-1 py-1.5 rounded-md text-caption font-bold border transition-colors',
+                                                            scores[cat.id as keyof typeof scores] === num
+                                                                ? 'bg-primary text-white border-primary-light'
+                                                                : 'bg-white/5 text-text-muted border-white/10 hover:bg-white/10 hover:text-text-primary'
+                                                        )}
+                                                    >
+                                                        {num}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="p-5 rounded-xl bg-black/20 border border-white/[0.06] mt-6 space-y-4">
+                                    <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+                                        <div>
+                                            <p className="text-caption text-text-muted mb-1">Total Marks</p>
+                                            <p className="text-display-sm font-bold text-text-primary leading-none">
+                                                {totalScore}<span className="text-heading-sm text-text-muted font-medium">/20</span>
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-caption text-text-muted mb-1">Vote Percentage</p>
+                                            <p className="text-display-sm font-bold text-primary-light leading-none">
+                                                {((totalScore / 20) * 100).toFixed(0)}%
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[11px] text-text-muted uppercase tracking-widest leading-relaxed max-w-[180px]">
+                                            Percentage automatically converts to YES vote weight
+                                        </p>
+                                        <PrimaryButton
+                                            onClick={submitEvaluation}
+                                            disabled={totalScore === 0 || voting}
+                                            loading={voting}
+                                            className="shadow-lg shadow-primary/20 gap-2 disabled:opacity-50 px-5 py-2.5 text-sm whitespace-nowrap flex-shrink-0"
+                                        >
+                                            Submit Evaluation <CheckCircle2 className="w-4 h-4" />
+                                        </PrimaryButton>
+                                    </div>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -17,7 +17,8 @@ const steps = [
     { id: 1, label: 'Basic Info', icon: FileText },
     { id: 2, label: 'Funding', icon: DollarSign },
     { id: 3, label: 'Milestones', icon: Target },
-    { id: 4, label: 'Review', icon: Eye },
+    { id: 4, label: 'Evaluation Q&A', icon: Target },
+    { id: 5, label: 'Review', icon: Eye },
 ];
 
 interface MilestoneField {
@@ -37,6 +38,12 @@ interface FormData {
     fundingToken: string;
     duration: string;
     milestones: MilestoneField[];
+    evaluationAnswers: {
+        problem: string;
+        technical: string;
+        innovation: string;
+        sustainability: string;
+    };
 }
 
 const initialMilestone: MilestoneField = { title: '', description: '', allocation: '', dueDate: '' };
@@ -57,6 +64,7 @@ export default function SubmitProposalPage() {
         fundingToken: 'USDC',
         duration: '',
         milestones: [{ ...initialMilestone }],
+        evaluationAnswers: { problem: '', technical: '', innovation: '', sustainability: '' }
     });
 
     const updateField = (field: keyof FormData, value: string) => {
@@ -99,6 +107,12 @@ export default function SubmitProposalPage() {
                 alert('Please ensure all milestone boxes are completely filled out.'); return;
             }
         }
+        if (currentStep === 4) {
+            if (Object.values(form.evaluationAnswers).some(val => !val.trim())) {
+                alert('Please provide answers for all 4 evaluation metrics.');
+                return;
+            }
+        }
         setCurrentStep(prev => prev + 1);
     };
 
@@ -110,12 +124,17 @@ export default function SubmitProposalPage() {
 
         setSubmitting(true);
         try {
+            const combinedDescription = JSON.stringify({
+                mainText: form.description,
+                answers: form.evaluationAnswers
+            });
+
             const { error } = await supabase
                 .from('proposals')
                 .insert([
                     {
                         title: form.title,
-                        description: form.description,
+                        description: combinedDescription,
                         category: form.category,
                         university: form.university,
                         team_size: parseInt(form.teamSize) || 1,
@@ -355,9 +374,59 @@ export default function SubmitProposalPage() {
                         </motion.div>
                     )}
 
-                    {/* Step 4: Review */}
+                    {/* Step 4: Evaluation Q&A */}
                     {currentStep === 4 && (
                         <motion.div key="step4" variants={fadeInUp} initial="hidden" animate="visible" exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                            <h2 className="text-heading-lg font-semibold text-text-primary">Evaluation Q&A</h2>
+                            <p className="text-body-sm text-text-secondary -mt-2">Reviewers will evaluate your proposal based on these answers. Please be clear and concise.</p>
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">1. Problem Definition & Research Depth</label>
+                                    <textarea
+                                        value={form.evaluationAnswers.problem}
+                                        onChange={e => setForm(prev => ({ ...prev, evaluationAnswers: { ...prev.evaluationAnswers, problem: e.target.value } }))}
+                                        placeholder="Explain the core problem and your research behind it..."
+                                        rows={3}
+                                        className="input-field resize-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">2. Technical Feasibility & Methodology</label>
+                                    <textarea
+                                        value={form.evaluationAnswers.technical}
+                                        onChange={e => setForm(prev => ({ ...prev, evaluationAnswers: { ...prev.evaluationAnswers, technical: e.target.value } }))}
+                                        placeholder="What is your technical stack and approach?"
+                                        rows={3}
+                                        className="input-field resize-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">3. Innovation & Academic Originality</label>
+                                    <textarea
+                                        value={form.evaluationAnswers.innovation}
+                                        onChange={e => setForm(prev => ({ ...prev, evaluationAnswers: { ...prev.evaluationAnswers, innovation: e.target.value } }))}
+                                        placeholder="How is this different from existing solutions?"
+                                        rows={3}
+                                        className="input-field resize-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">4. Long Term Run</label>
+                                    <textarea
+                                        value={form.evaluationAnswers.sustainability}
+                                        onChange={e => setForm(prev => ({ ...prev, evaluationAnswers: { ...prev.evaluationAnswers, sustainability: e.target.value } }))}
+                                        placeholder="What is the sustainability model of this project?"
+                                        rows={3}
+                                        className="input-field resize-none"
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Step 5: Review */}
+                    {currentStep === 5 && (
+                        <motion.div key="step5" variants={fadeInUp} initial="hidden" animate="visible" exit={{ opacity: 0, y: -10 }} className="space-y-6">
                             <h2 className="text-heading-lg font-semibold text-text-primary">Review & Submit</h2>
                             <div className="space-y-4">
                                 <ReviewRow label="Project Title" value={form.title || '—'} />
@@ -366,6 +435,7 @@ export default function SubmitProposalPage() {
                                 <ReviewRow label="Funding Requested" value={`₹${form.fundingAmount || 0} Lakhs in ${form.fundingToken}`} highlight />
                                 <ReviewRow label="Duration" value={`${form.duration || 0} months`} />
                                 <ReviewRow label="Milestones" value={`${form.milestones.length} defined`} />
+                                <ReviewRow label="Evaluation Q&A" value="Completed" />
                             </div>
                             <GlassCard className="p-4 bg-success/5 border-success/20 space-y-2">
                                 <p className="text-body-sm font-semibold text-text-primary flex items-center gap-2">
@@ -392,7 +462,7 @@ export default function SubmitProposalPage() {
                     <ChevronLeft className="w-4 h-4" /> Previous
                 </SecondaryButton>
 
-                {currentStep < 4 ? (
+                {currentStep < 5 ? (
                     <PrimaryButton onClick={handleNext} className="gap-2">
                         Next <ChevronRight className="w-4 h-4" />
                     </PrimaryButton>

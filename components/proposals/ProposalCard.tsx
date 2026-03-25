@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 import { Proposal } from '@/types';
-import { formatCurrency, formatTimeLeft, getVotePercentage } from '@/lib/utils';
+import { formatCurrency, formatTimeLeft, getVotePercentage, parseProposalDescription } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import VoteBar from '@/components/ui/VoteBar';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button';
@@ -35,19 +35,22 @@ export default function ProposalCard({ proposal, index = 0, compact = false }: P
             // Fetch live vote counts for this card
             const { data: yesData } = await supabase
                 .from('votes')
-                .select('id')
+                .select('weight_cast')
                 .eq('proposal_id', proposal.id)
                 .eq('choice', 'yes');
 
             const { data: noData } = await supabase
                 .from('votes')
-                .select('id')
+                .select('weight_cast')
                 .eq('proposal_id', proposal.id)
                 .eq('choice', 'no');
 
-            // Use ?? 0 so that 0 real votes stays 0 (not falling back to mock data)
-            setVotesYes(yesData ? yesData.length : 0);
-            setVotesNo(noData ? noData.length : 0);
+            const yesSum = yesData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+            const noSum = noData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+
+            // Use the sum so that 0 real votes stays 0 (not falling back to mock data)
+            setVotesYes(yesSum);
+            setVotesNo(noSum);
 
             // Check if this wallet already voted
             if (address) {
@@ -103,7 +106,7 @@ export default function ProposalCard({ proposal, index = 0, compact = false }: P
                     </h3>
                     {!compact && (
                         <p className="text-body-sm text-text-secondary mt-2 line-clamp-2 leading-relaxed">
-                            {proposal.description}
+                            {parseProposalDescription(proposal.description).mainText}
                         </p>
                     )}
                 </div>

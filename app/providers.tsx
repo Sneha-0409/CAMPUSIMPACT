@@ -18,7 +18,7 @@ import {
 
 const config = getDefaultConfig({
     appName: 'CampusImpact DAO',
-    projectId: 'a42f74154fa784d0ababc2ddbd5db77a', // Public demo WalletConnect ID
+    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'a42f74154fa784d0ababc2ddbd5db77a',
     chains: [polygon, polygonAmoy, sepolia],
     ssr: true, // required for Next.js App Router
 });

@@ -28,8 +28,8 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
             // If they just logged in after picking a role on the landing page (saved in localStorage)
             const intendedRole = localStorage.getItem('intended_role');
             if (intendedRole && !profile?.role) {
-                // Update their profile instantly in the background!
-                await supabase.from('profiles').update({ role: intendedRole as UserRole, id_verified: 'pending' }).eq('id', session.user.id);
+                // Update their profile instantly in the background! (Upsert guarantees creation if they missed it during signup)
+                await supabase.from('profiles').upsert({ id: session.user.id, role: intendedRole as UserRole, id_verified: 'pending' });
                 localStorage.removeItem('intended_role');
                 
                 // Now they have a role, so let them skip onboarding!
