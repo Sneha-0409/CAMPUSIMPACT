@@ -15,7 +15,6 @@ import { dashboardStats, mockProposals } from '@/lib/mockData';
 import { staggerContainer, fadeInUp, scaleIn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import StudentDashboardPanel from '@/components/dashboard/StudentDashboardPanel';
-import ReviewerDashboardPanel from '@/components/dashboard/ReviewerDashboardPanel';
 
 const iconMap: Record<string, React.ElementType> = {
     Wallet, FileText, Zap, Trophy,
@@ -135,78 +134,81 @@ export default function DashboardPage() {
             {/* Activity + Governance snapshot */}
             <div className="grid lg:grid-cols-3 gap-6">
                 {/* Treasury Snapshot */}
-                <GlassCard className="p-6 space-y-5">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-heading-md font-semibold text-text-primary">Treasury Health</h3>
-                        <Link href="/app/treasury" className="text-body-sm text-primary-light hover:text-primary transition-colors">View →</Link>
-                    </div>
-                    <div className="space-y-4">
-                        {[
-                            { label: 'Total Balance', value: '₹248.5L', width: '100%', color: 'bg-primary' },
-                            { label: 'Locked in Proposals', value: '₹87.2L', width: '35%', color: 'bg-warning' },
-                            { label: 'Available', value: '₹161.3L', width: '65%', color: 'bg-success' },
-                        ].map(({ label, value, width, color }) => (
-                            <div key={label} className="space-y-1.5">
-                                <div className="flex justify-between">
-                                    <span className="text-caption text-text-muted">{label}</span>
-                                    <span className="text-caption font-semibold text-text-secondary">{value}</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-white/5">
-                                    <motion.div
-                                        className={`h-full rounded-full ${color}`}
-                                        initial={{ width: 0 }}
-                                        animate={{ width }}
-                                        transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="pt-2 border-t border-white/[0.06]">
-                        <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-success" />
-                            <span className="text-body-sm text-success font-semibold">+12.4% this month</span>
+                {role !== 'faculty' && role !== 'alumni' && (
+                    <GlassCard className="p-6 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-heading-md font-semibold text-text-primary">Treasury Health</h3>
+                            <Link href="/app/treasury" className="text-body-sm text-primary-light hover:text-primary transition-colors">View →</Link>
                         </div>
-                    </div>
-                </GlassCard>
+                        <div className="space-y-4">
+                            {[
+                                { label: 'Total Balance', value: '₹248.5L', width: '100%', color: 'bg-primary' },
+                                { label: 'Locked in Proposals', value: '₹87.2L', width: '35%', color: 'bg-warning' },
+                                { label: 'Available', value: '₹161.3L', width: '65%', color: 'bg-success' },
+                            ].map((item) => (
+                                <div key={item.label} className="space-y-2">
+                                    <div className="flex items-center justify-between text-body-sm">
+                                        <span className="text-text-secondary">{item.label}</span>
+                                        <span className="text-text-primary font-semibold">{item.value}</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: item.width }}
+                                            transition={{ duration: 1, ease: 'easeOut' }}
+                                            className={`h-full ${item.color}`}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="pt-2 border-t border-white/[0.06]">
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-success" />
+                                <span className="text-body-sm text-success font-semibold">+12.4% this month</span>
+                            </div>
+                        </div>
+                    </GlassCard>
+                )}
 
                 {/* Recent Activity */}
-                <GlassCard className="lg:col-span-2 p-6 space-y-5">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-heading-md font-semibold text-text-primary">Recent Activity</h3>
-                        <Link href="/app/activity" className="text-body-sm text-primary-light hover:text-primary transition-colors">View All →</Link>
-                    </div>
-                    <div className="space-y-1">
-                        {[
-                            { action: 'Voted YES on AgroSync', time: '2 hours ago', type: 'vote', color: 'text-success', bg: 'bg-success/10 border-success/20' },
-                            { action: 'NexaLearn passed quorum threshold', time: '5 hours ago', type: 'milestone', color: 'text-primary-light', bg: 'bg-primary/10 border-primary/20' },
-                            { action: 'GridFlow disbursement executed', time: '1 day ago', type: 'treasury', color: 'text-accent-blue', bg: 'bg-accent-blue/10 border-accent-blue/20' },
-                            { action: 'ClearVote proposal submitted', time: '2 days ago', type: 'proposal', color: 'text-warning', bg: 'bg-warning/10 border-warning/20' },
-                            { action: 'MediChain funding requested: ₹28L', time: '3 days ago', type: 'proposal', color: 'text-text-muted', bg: 'bg-white/5 border-white/10' },
-                        ].map(({ action, time, type, color, bg }) => (
-                            <div key={action} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.02] transition-all group">
-                                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${bg}`}>
-                                    {type === 'vote' && <TrendingUp className={`w-3.5 h-3.5 ${color}`} />}
-                                    {type === 'milestone' && <Zap className={`w-3.5 h-3.5 ${color}`} />}
-                                    {type === 'treasury' && <Wallet className={`w-3.5 h-3.5 ${color}`} />}
-                                    {type === 'proposal' && <FileText className={`w-3.5 h-3.5 ${color}`} />}
+                {role !== 'faculty' && role !== 'alumni' && (
+                    <GlassCard className="lg:col-span-2 p-6 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-heading-md font-semibold text-text-primary">Recent Activity</h3>
+                            <Link href="/app/activity" className="text-body-sm text-primary-light hover:text-primary transition-colors">View All →</Link>
+                        </div>
+                        <div className="space-y-1">
+                            {[
+                                { action: 'Voted YES on AgroSync', time: '2 hours ago', type: 'vote', color: 'text-success', bg: 'bg-success/10 border-success/20' },
+                                { action: 'NexaLearn passed quorum threshold', time: '5 hours ago', type: 'milestone', color: 'text-primary-light', bg: 'bg-primary/10 border-primary/20' },
+                                { action: 'GridFlow disbursement executed', time: '1 day ago', type: 'treasury', color: 'text-accent-blue', bg: 'bg-accent-blue/10 border-accent-blue/20' },
+                                { action: 'ClearVote proposal submitted', time: '2 days ago', type: 'proposal', color: 'text-warning', bg: 'bg-warning/10 border-warning/20' },
+                                { action: 'MediChain funding requested: ₹28L', time: '3 days ago', type: 'proposal', color: 'text-text-muted', bg: 'bg-white/5 border-white/10' },
+                            ].map(({ action, time, type, color, bg }) => (
+                                <div key={action} className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/[0.02] transition-all group">
+                                    <div className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${bg}`}>
+                                        {type === 'vote' && <TrendingUp className={`w-3.5 h-3.5 ${color}`} />}
+                                        {type === 'milestone' && <Zap className={`w-3.5 h-3.5 ${color}`} />}
+                                        {type === 'treasury' && <Wallet className={`w-3.5 h-3.5 ${color}`} />}
+                                        {type === 'proposal' && <FileText className={`w-3.5 h-3.5 ${color}`} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-body-sm text-text-secondary group-hover:text-text-primary transition-colors truncate">{action}</p>
+                                    </div>
+                                    <span className="text-caption text-text-muted flex-shrink-0 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {time}
+                                    </span>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-body-sm text-text-secondary group-hover:text-text-primary transition-colors truncate">{action}</p>
-                                </div>
-                                <span className="text-caption text-text-muted flex-shrink-0 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {time}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </GlassCard>
+                            ))}
+                        </div>
+                    </GlassCard>
+                )}
             </div>
 
             {/* Role-Specific Dashboard Inject */}
             {role === 'student' && <StudentDashboardPanel proposals={activeProposals} />}
-            {(role === 'faculty' || role === 'alumni') && <ReviewerDashboardPanel role={role} proposals={activeProposals} />}
 
             {/* Active Proposals */}
             <div className="mt-12 pt-8 border-t border-white/5">

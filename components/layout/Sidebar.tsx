@@ -48,7 +48,9 @@ export default function Sidebar({ className }: SidebarProps) {
 
     const filteredItems = sidebarItems.filter(item => {
         if (role === 'faculty' || role === 'alumni') {
-            return item.label !== 'Submit Proposal' && item.label !== 'Governance';
+            return item.label !== 'Submit Proposal' && 
+                   item.label !== 'Governance' && 
+                   item.label !== 'Treasury';
         }
         return true;
     });

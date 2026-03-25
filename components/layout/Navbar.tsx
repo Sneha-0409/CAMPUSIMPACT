@@ -26,14 +26,25 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const isLanding = pathname === '/';
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUserEmail(session?.user?.email ?? null);
+            if (session?.user) {
+                supabase.from('profiles').select('role').eq('id', session.user.id).single()
+                    .then(({ data }) => setRole(data?.role || null));
+            }
         });
         const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
             setUserEmail(session?.user?.email ?? null);
+            if (session?.user) {
+                supabase.from('profiles').select('role').eq('id', session.user.id).single()
+                    .then(({ data }) => setRole(data?.role || null));
+            } else {
+                setRole(null);
+            }
         });
         return () => listener.subscription.unsubscribe();
     }, []);
@@ -81,20 +92,28 @@ export default function Navbar() {
                                 <a href="#impact" className="px-4 py-2 text-body-sm text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-white/5">Impact</a>
                             </>
                         )
-                        : navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={cn(
-                                    'px-4 py-2 text-body-sm rounded-lg transition-all duration-150 font-medium',
-                                    pathname === link.href
-                                        ? 'bg-primary/10 text-primary-light'
-                                        : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
-                                )}
-                            >
-                                {link.label}
-                            </Link>
-                        ))
+                        : navLinks
+                            .filter(link => {
+                                // Faculty/Alumni top nav is completely empty as requested
+                                if (role === 'faculty' || role === 'alumni') {
+                                    return false;
+                                }
+                                return true;
+                            })
+                            .map((link) => (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={cn(
+                                        'px-4 py-2 text-body-sm rounded-lg transition-all duration-150 font-medium',
+                                        pathname === link.href
+                                            ? 'bg-primary/10 text-primary-light'
+                                            : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+                                    )}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))
                     }
                 </nav>
 
@@ -157,7 +176,14 @@ export default function Navbar() {
                         className="md:hidden bg-background/95 backdrop-blur-xl border-t border-white/[0.06]"
                     >
                         <nav className="px-6 py-4 flex flex-col gap-1">
-                            {navLinks.map((link) => (
+                            {navLinks
+                                .filter(link => {
+                                    if (role === 'faculty' || role === 'alumni') {
+                                        return false;
+                                    }
+                                    return true;
+                                })
+                                .map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}

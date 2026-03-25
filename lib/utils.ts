@@ -121,3 +121,14 @@ export const slideInLeft: any = {
     transition: { duration: 0.35, ease: "easeOut" },
   },
 };
+
+export function parseProposalDescription(desc: string) {
+  if (!desc) return { mainText: '', answers: null };
+  try {
+    const parsed = JSON.parse(desc);
+    if (parsed.mainText !== undefined) {
+      return parsed;
+    }
+  } catch { }
+  return { mainText: desc, answers: null };
+}

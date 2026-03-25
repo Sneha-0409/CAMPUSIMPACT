@@ -50,9 +50,16 @@ export default function ActivityPage() {
     const [proposalTitles, setProposalTitles] = useState<Record<string, string>>(MOCK_TITLES);
     const [tab, setTab] = useState<TabType>('all');
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState<'student' | 'faculty' | 'alumni' | null>(null);
 
     useEffect(() => {
         const load = async () => {
+            // Get user role
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                if (data) setRole(data.role as 'student' | 'faculty' | 'alumni');
+            }
             // Fetch proposals first (to build title map)
             const { data: propData } = await supabase
                 .from('proposals')
@@ -95,30 +102,34 @@ export default function ActivityPage() {
                     </h1>
                     <p className="text-body-md text-text-secondary mt-2">
                         Live feed of votes and proposals — directly from Supabase.
-                        {!loading && <span className="text-primary-light font-semibold"> {votes.length} votes · {proposals.length} proposals</span>}
+                        {!loading && role !== 'faculty' && (
+                            <span className="text-primary-light font-semibold"> {votes.length} votes · {proposals.length} proposals</span>
+                        )}
                     </p>
                 </div>
                 {/* Tab Buttons */}
-                <div className="flex gap-2 flex-wrap">
-                    {([
-                        { id: 'all', label: 'All Activity' },
-                        { id: 'votes', label: `Votes (${votes.length})` },
-                        { id: 'proposals', label: `Proposals (${proposals.length})` },
-                    ] as { id: TabType; label: string }[]).map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setTab(t.id)}
-                            className={cn(
-                                'px-4 py-2 border rounded-xl text-body-sm transition-colors',
-                                tab === t.id
-                                    ? 'bg-primary/20 border-primary/40 text-primary-light font-semibold'
-                                    : 'bg-white/5 border-white/10 text-text-muted hover:bg-white/10'
-                            )}
-                        >
-                            {t.label}
-                        </button>
-                    ))}
-                </div>
+                {role !== 'faculty' && (
+                    <div className="flex gap-2 flex-wrap">
+                        {([
+                            { id: 'all', label: 'All Activity' },
+                            { id: 'votes', label: `Votes (${votes.length})` },
+                            { id: 'proposals', label: `Proposals (${proposals.length})` },
+                        ] as { id: TabType; label: string }[]).map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => setTab(t.id)}
+                                className={cn(
+                                    'px-4 py-2 border rounded-xl text-body-sm transition-colors',
+                                    tab === t.id
+                                        ? 'bg-primary/20 border-primary/40 text-primary-light font-semibold'
+                                        : 'bg-white/5 border-white/10 text-text-muted hover:bg-white/10'
+                                )}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <GlassCard className="p-4 sm:p-6">

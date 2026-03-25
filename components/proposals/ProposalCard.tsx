@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 import { Proposal } from '@/types';
-import { formatCurrency, formatTimeLeft, getVotePercentage } from '@/lib/utils';
+import { formatCurrency, formatTimeLeft, getVotePercentage, parseProposalDescription } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import VoteBar from '@/components/ui/VoteBar';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button';
@@ -106,7 +106,7 @@ export default function ProposalCard({ proposal, index = 0, compact = false }: P
                     </h3>
                     {!compact && (
                         <p className="text-body-sm text-text-secondary mt-2 line-clamp-2 leading-relaxed">
-                            {proposal.description}
+                            {parseProposalDescription(proposal.description).mainText}
                         </p>
                     )}
                 </div>
