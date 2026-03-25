@@ -1,5 +1,18 @@
 // ─── Core Domain Types ────────────────────────────────────────────────────
 
+export type UserRole = 'student' | 'faculty' | 'alumni';
+export type IDVerificationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface UserProfile {
+  id: string; // matches auth.users.id
+  email: string;
+  role: UserRole | null;
+  id_verified: IDVerificationStatus;
+  id_card_url: string | null;
+  full_name: string;
+  created_at: string;
+}
+
 export type ProposalStatus = 'active' | 'pending' | 'passed' | 'rejected' | 'executed';
 
 export interface Milestone {
