@@ -69,12 +69,14 @@ export default function DashboardPage() {
                     </p>
                 </motion.div>
                 <motion.div variants={fadeInUp} className="flex gap-3">
-                    <Link href="/app/submit">
-                        <PrimaryButton className="gap-2">
-                            <Plus className="w-4 h-4" />
-                            New Proposal
-                        </PrimaryButton>
-                    </Link>
+                    {role !== 'faculty' && role !== 'alumni' && (
+                        <Link href="/app/submit">
+                            <PrimaryButton className="gap-2">
+                                <Plus className="w-4 h-4" />
+                                New Proposal
+                            </PrimaryButton>
+                        </Link>
+                    )}
                 </motion.div>
             </motion.div>
 
@@ -87,6 +89,20 @@ export default function DashboardPage() {
             >
                 {dashboardStats.map((stat) => {
                     const Icon = iconMap[stat.icon];
+                    let displayValue = stat.value;
+                    let displayChange = stat.change;
+                    let displayDescription = stat.description;
+
+                    if (stat.label === 'Your Voting Power') {
+                        if (role === 'faculty') {
+                            displayValue = '1.5x'; displayChange = ''; displayDescription = '';
+                        } else if (role === 'alumni') {
+                            displayValue = '1.2x'; displayChange = ''; displayDescription = '';
+                        } else if (role === 'student') {
+                            displayValue = '1.0x'; displayChange = ''; displayDescription = '';
+                        }
+                    }
+
                     return (
                         <motion.div key={stat.label} variants={scaleIn}>
                             <GlassCard className="p-6 space-y-4 hover:-translate-y-1 hover:shadow-card-hover transition-all duration-300 group">
@@ -98,7 +114,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div>
                                     <p className="text-display-sm font-bold text-text-primary leading-none mb-1">
-                                        {stat.value}
+                                        {displayValue}
                                     </p>
                                     <p className="text-heading-sm font-medium text-text-secondary">{stat.label}</p>
                                 </div>
@@ -106,9 +122,9 @@ export default function DashboardPage() {
                                     <span className={`text-caption font-semibold ${stat.changeType === 'positive' ? 'text-success' :
                                         stat.changeType === 'negative' ? 'text-danger' : 'text-text-muted'
                                         }`}>
-                                        {stat.change}
+                                        {displayChange}
                                     </span>
-                                    <span className="text-caption text-text-muted">{stat.description}</span>
+                                    <span className="text-caption text-text-muted">{displayDescription}</span>
                                 </div>
                             </GlassCard>
                         </motion.div>
@@ -228,32 +244,34 @@ export default function DashboardPage() {
             </div>
 
             {/* Governance Snapshot */}
-            <GlassCard className="p-8">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                    <div className="space-y-2">
-                        <h3 className="text-heading-lg font-semibold text-text-primary">Your Governance Power</h3>
-                        <p className="text-body-sm text-text-secondary">Hold CIMP tokens to vote on proposals and shape the direction of the DAO.</p>
+            {role !== 'faculty' && role !== 'alumni' && (
+                <GlassCard className="p-8">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                        <div className="space-y-2">
+                            <h3 className="text-heading-lg font-semibold text-text-primary">Your Governance Power</h3>
+                            <p className="text-body-sm text-text-secondary">Hold CIMP tokens to vote on proposals and shape the direction of the DAO.</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-8 lg:flex lg:gap-12">
+                            {[
+                                { label: 'CIMP Balance', value: '12,500', sub: 'tokens' },
+                                { label: 'Voting Weight', value: '1.0x', sub: 'multiplier' },
+                                { label: 'Votes Cast', value: '34', sub: 'this month' },
+                            ].map(({ label, value, sub }) => (
+                                <div key={label} className="text-center">
+                                    <p className="text-heading-lg font-bold gradient-text">{value}</p>
+                                    <p className="text-body-sm text-text-secondary font-medium mt-0.5">{label}</p>
+                                    <p className="text-caption text-text-muted">{sub}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <Link href="/app/governance">
+                            <PrimaryButton className="text-body-sm py-2.5">
+                                View Governance
+                            </PrimaryButton>
+                        </Link>
                     </div>
-                    <div className="grid grid-cols-3 gap-8 lg:flex lg:gap-12">
-                        {[
-                            { label: 'CIMP Balance', value: '12,500', sub: 'tokens' },
-                            { label: 'Voting Weight', value: '0.18%', sub: 'of supply' },
-                            { label: 'Votes Cast', value: '34', sub: 'this month' },
-                        ].map(({ label, value, sub }) => (
-                            <div key={label} className="text-center">
-                                <p className="text-heading-lg font-bold gradient-text">{value}</p>
-                                <p className="text-body-sm text-text-secondary font-medium mt-0.5">{label}</p>
-                                <p className="text-caption text-text-muted">{sub}</p>
-                            </div>
-                        ))}
-                    </div>
-                    <Link href="/app/governance">
-                        <PrimaryButton className="text-body-sm py-2.5">
-                            View Governance
-                        </PrimaryButton>
-                    </Link>
-                </div>
-            </GlassCard>
+                </GlassCard>
+            )}
         </div>
     );
 }

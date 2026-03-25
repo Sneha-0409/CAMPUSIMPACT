@@ -37,10 +37,11 @@ export default function ReviewerDashboardPanel({ role, proposals }: { role: 'fac
 
             const { error } = await supabase.from('votes').insert({
                 proposal_id: evaluating,
-                voter_id: session.user.id,
+                voter_address: session.user.email || session.user.id, // Fallback for voter address
                 voter_role: role,
                 score: totalScore,
-                weight_cast: finalVoteWeight
+                weight_cast: finalVoteWeight,
+                choice: 'yes'
             });
 
             if (error) throw error;

@@ -224,14 +224,6 @@ export interface DashboardStat {
 
 export const dashboardStats: DashboardStat[] = [
   {
-    label: 'Treasury Balance',
-    value: '₹248.5L',
-    change: '+12.4%',
-    changeType: 'positive',
-    icon: 'Wallet',
-    description: 'Available: ₹161.3L',
-  },
-  {
     label: 'Active Proposals',
     value: '3',
     change: '+2 this week',
@@ -246,14 +238,6 @@ export const dashboardStats: DashboardStat[] = [
     changeType: 'neutral',
     icon: 'Zap',
     description: 'CIMP tokens',
-  },
-  {
-    label: 'Projects Funded',
-    value: '24',
-    change: '+3 this quarter',
-    changeType: 'positive',
-    icon: 'Trophy',
-    description: '₹96.8L disbursed',
   },
 ];
 

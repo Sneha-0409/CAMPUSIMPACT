@@ -10,23 +10,21 @@ import ProposalCard from '@/components/proposals/ProposalCard';
 import { staggerContainer } from '@/lib/utils';
 import { Proposal } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { useAccount } from 'wagmi';
 
 export default function StudentDashboardPanel({ proposals }: { proposals: Proposal[] }) {
+    const { address } = useAccount();
     const [myProjects, setMyProjects] = useState<any[]>([]);
     const [uploading, setUploading] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchMyProjects = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const { data } = await supabase.from('proposals').select('*').eq('proposer_address', session.user.id);
-            // Wait, their proposer_address was set to the Wallet Connect address. 
-            // We'll just fetch based on their user ID for security in the actual application,
-            // but since it's a demo, we can just grab the most recent one or display empty state if none.
+            if (!address) return;
+            const { data } = await supabase.from('proposals').select('*').eq('proposer_address', address);
             if (data) setMyProjects(data);
         };
         fetchMyProjects();
-    }, []);
+    }, [address]);
 
     const handleUploadInvoice = (projectId: string) => {
         setUploading(projectId);
@@ -70,34 +68,55 @@ export default function StudentDashboardPanel({ proposals }: { proposals: Propos
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {myProjects.map((project) => (
+                            {myProjects.map((project) => {
+                                // Find current milestone
+                                const milestones = project.milestones || [];
+                                const currentMilestoneIndex = milestones.findIndex((m: any) => !m.completed);
+                                const isCompleted = currentMilestoneIndex === -1 && milestones.length > 0;
+                                const currentMilestone = isCompleted ? null : (milestones[currentMilestoneIndex] || { title: 'First Stage', allocation: '20' });
+
+                                return (
                                 <div key={project.id} className="p-4 bg-white/[0.03] border border-white/[0.08] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
                                         <h4 className="text-white font-medium text-sm truncate">{project.title}</h4>
                                     </div>
-                                    <p className="text-xs text-gray-400 mb-3">Milestone 1/3: 20% Funding Tranche</p>
                                     
-                                    <div className="relative border-2 border-dashed border-white/10 rounded-lg p-4 hover:border-purple-500/50 hover:bg-white/[0.02] transition-colors group cursor-pointer">
-                                        <input 
-                                            type="file" 
-                                            accept=".pdf,.png,.jpg"
-                                            onChange={() => handleUploadInvoice(project.id)}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        />
-                                        <div className="flex flex-col items-center text-center">
-                                            {uploading === project.id ? (
-                                                <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-1" />
-                                            ) : (
-                                                <UploadCloud className="w-5 h-5 text-gray-400 group-hover:text-purple-400 mb-1 transition-colors" />
-                                            )}
-                                            <p className="text-xs font-semibold text-gray-300 group-hover:text-white">
-                                                {uploading === project.id ? 'Encrypting...' : 'Upload Invoice / PDF'}
+                                    {!isCompleted ? (
+                                        <>
+                                            <p className="text-xs text-gray-400 mb-1">
+                                                Milestone {currentMilestoneIndex + 1}/{milestones.length}: {currentMilestone.title}
                                             </p>
-                                        </div>
-                                    </div>
+                                            <p className="text-xs text-blue-400 font-medium mb-3">
+                                                {currentMilestone.allocation || currentMilestone.fundAllocation}% Funding Tranche
+                                            </p>
+                                            <div className="relative border-2 border-dashed border-white/10 rounded-lg p-4 hover:border-purple-500/50 hover:bg-white/[0.02] transition-colors group cursor-pointer">
+                                                <input 
+                                                    type="file" 
+                                                    accept=".pdf,.png,.jpg"
+                                                    onChange={() => handleUploadInvoice(project.id)}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                />
+                                                <div className="flex flex-col items-center text-center">
+                                                    {uploading === project.id ? (
+                                                        <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-1" />
+                                                    ) : (
+                                                        <UploadCloud className="w-5 h-5 text-gray-400 group-hover:text-purple-400 mb-1 transition-colors" />
+                                                    )}
+                                                    <p className="text-xs font-semibold text-gray-300 group-hover:text-white">
+                                                        {uploading === project.id ? 'Encrypting...' : 'Upload Invoice / PDF'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-green-400 font-medium my-4 flex items-center gap-1">
+                                            <CheckCircle2 className="w-4 h-4" /> All Milestones Completed
+                                        </p>
+                                    )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </GlassCard>

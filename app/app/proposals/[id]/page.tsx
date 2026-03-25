@@ -84,21 +84,24 @@ export default function ProposalDetailPage() {
         if (!params.id) return;
 
         const checkVote = async () => {
-            // Fetch live vote counts
+            // Fetch live vote weights
             const { data: yesData } = await supabase
                 .from('votes')
-                .select('id', { count: 'exact' })
+                .select('weight_cast')
                 .eq('proposal_id', params.id)
                 .eq('choice', 'yes');
 
             const { data: noData } = await supabase
                 .from('votes')
-                .select('id', { count: 'exact' })
+                .select('weight_cast')
                 .eq('proposal_id', params.id)
                 .eq('choice', 'no');
 
-            setVotesYes(yesData ? yesData.length : 0);
-            setVotesNo(noData ? noData.length : 0);
+            const yesSum = yesData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+            const noSum = noData?.reduce((sum, vote) => sum + (vote.weight_cast || 1), 0) || 0;
+
+            setVotesYes(yesSum);
+            setVotesNo(noSum);
 
             // Check if this wallet has already voted (runs when address loads too)
             const walletAddress = address;
@@ -155,7 +158,8 @@ export default function ProposalDetailPage() {
                 .insert([{
                     proposal_id: params.id,
                     voter_address: address,
-                    choice: choice
+                    choice: choice,
+                    weight_cast: 1
                 }]);
 
             if (error) {

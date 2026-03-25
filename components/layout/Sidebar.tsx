@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     LayoutDashboard, FileText, Plus, Wallet, Shield,
-    Activity, ChevronRight, Zap, ExternalLink
+    Activity, ChevronRight, Zap, ExternalLink, LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 
 const sidebarItems = [
     { label: 'Dashboard', href: '/app', icon: LayoutDashboard },
@@ -24,6 +27,31 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname();
+    const router = useRouter();
+    const [role, setRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                if (data) setRole(data.role);
+            }
+        };
+        fetchRole();
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push('/');
+    };
+
+    const filteredItems = sidebarItems.filter(item => {
+        if (role === 'faculty' || role === 'alumni') {
+            return item.label !== 'Submit Proposal' && item.label !== 'Governance';
+        }
+        return true;
+    });
 
     return (
         <aside
@@ -34,7 +62,7 @@ export default function Sidebar({ className }: SidebarProps) {
         >
             {/* Nav Items */}
             <nav className="flex flex-col gap-1 px-3">
-                {sidebarItems.map(({ label, href, icon: Icon, badge }) => {
+                {filteredItems.map(({ label, href, icon: Icon, badge }) => {
                     const isActive = pathname === href;
                     return (
                         <Link key={href} href={href}>
@@ -61,35 +89,14 @@ export default function Sidebar({ className }: SidebarProps) {
                 })}
             </nav>
 
-            {/* Treasury Quick Stats */}
-            <div className="mt-6 mx-3 glass-card p-4">
-                <p className="text-caption text-text-muted mb-3 uppercase tracking-wider font-semibold">Quick Stats</p>
-                <div className="space-y-3">
-                    {[
-                        { label: 'Treasury', value: '₹248.5L' },
-                        { label: 'Active', value: '3 proposals' },
-                        { label: 'Your CIMP', value: '12,500' },
-                    ].map(({ label, value }) => (
-                        <div key={label} className="flex justify-between items-center">
-                            <span className="text-caption text-text-muted">{label}</span>
-                            <span className="text-caption text-text-secondary font-semibold">{value}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Bottom Link */}
             <div className="mt-auto px-3">
-                <a
-                    href="https://polygonscan.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-3 rounded-xl text-body-sm text-text-muted hover:text-text-secondary hover:bg-white/5 transition-all"
+                <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-body-sm text-text-muted hover:text-danger hover:bg-danger/10 transition-all group"
                 >
-                    <Zap className="w-4 h-4 text-primary" />
-                    <span>Polygon Network</span>
-                    <ExternalLink className="w-3 h-3 ml-auto" />
-                </a>
+                    <LogOut className="w-4 h-4 group-hover:text-danger transition-colors" />
+                    <span className="font-medium">Logout</span>
+                </button>
             </div>
         </aside>
     );
