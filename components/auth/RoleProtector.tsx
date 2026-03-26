@@ -32,9 +32,11 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
                 const finalRole = (intendedRole || 'student') as UserRole;
                 console.log('No role found, assigning default:', finalRole);
                 
-                // Update their profile instantly (Upsert guarantees creation)
+                // We use upsert so even OLD accounts created before the trigger existed get fixed!
                 const { error } = await supabase.from('profiles').upsert({ 
-                    id: session.user.id, 
+                    id: session.user.id,
+                    email: session.user.email || 'no-email@provided.com',
+                    full_name: session.user.user_metadata?.full_name || 'Anonymous User',
                     role: finalRole, 
                     id_verified: 'pending' 
                 });
