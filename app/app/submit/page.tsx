@@ -432,7 +432,7 @@ export default function SubmitProposalPage() {
                                 <ReviewRow label="Project Title" value={form.title || '—'} />
                                 <ReviewRow label="Category" value={form.category || '—'} />
                                 <ReviewRow label="University" value={form.university || '—'} />
-                                <ReviewRow label="Funding Requested" value={`₹${form.fundingAmount || 0} Lakhs in ${form.fundingToken}`} highlight />
+                                <ReviewRow label="Funding Requested" value={`₹${form.fundingAmount || 0} in ${form.fundingToken}`} highlight />
                                 <ReviewRow label="Duration" value={`${form.duration || 0} months`} />
                                 <ReviewRow label="Milestones" value={`${form.milestones.length} defined`} />
                                 <ReviewRow label="Evaluation Q&A" value="Completed" />
