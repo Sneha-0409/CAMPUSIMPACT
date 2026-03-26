@@ -33,12 +33,15 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
                 console.log('No role found, assigning default:', finalRole);
                 
                 // Update their profile instantly (Upsert guarantees creation)
-                await supabase.from('profiles').upsert({ 
+                const { error } = await supabase.from('profiles').upsert({ 
                     id: session.user.id, 
-                    email: session.user.email,
                     role: finalRole, 
                     id_verified: 'pending' 
                 });
+                
+                if (error) {
+                    console.error('Supabase Save Error:', error);
+                }
                 
                 if (intendedRole) localStorage.removeItem('intended_role');
                 
