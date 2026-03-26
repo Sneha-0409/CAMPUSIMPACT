@@ -197,7 +197,7 @@ export default function DashboardPage() {
                 )}
 
                 {/* Recent Activity */}
-                {role !== 'faculty' && role !== 'alumni' && (
+                {(role !== 'faculty' && role !== 'alumni' && role !== 'student' && role !== null) && (
                     <GlassCard className="lg:col-span-2 p-6 space-y-5">
                         <div className="flex items-center justify-between">
                             <h3 className="text-heading-md font-semibold text-text-primary">Recent Activity</h3>
