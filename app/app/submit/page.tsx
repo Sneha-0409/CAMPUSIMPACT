@@ -252,9 +252,9 @@ export default function SubmitProposalPage() {
                                     <div>
                                         <label className="block text-body-sm text-text-secondary font-medium mb-2">Category</label>
                                         <select value={form.category} onChange={e => updateField('category', e.target.value)} className="input-field">
-                                            <option value="">Select category</option>
+                                            <option value="" className="bg-[#111827] text-white">Select category</option>
                                             {['AgriTech', 'EdTech', 'HealthTech', 'CleanTech', 'GovTech', 'LegalTech', 'FinTech', 'Other'].map(c => (
-                                                <option key={c} value={c}>{c}</option>
+                                                <option key={c} value={c} className="bg-[#111827] text-white">{c}</option>
                                             ))}
                                         </select>
                                     </div>
