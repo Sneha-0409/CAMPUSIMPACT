@@ -251,10 +251,15 @@ export default function SubmitProposalPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-body-sm text-text-secondary font-medium mb-2">Category</label>
-                                        <select value={form.category} onChange={e => updateField('category', e.target.value)} className="input-field">
-                                            <option value="" style={{ backgroundColor: '#0B1120', color: '#ffffff' }}>Select category</option>
+                                        <select 
+                                            value={form.category} 
+                                            onChange={e => updateField('category', e.target.value)} 
+                                            className="input-field bg-[#0B1120] text-white"
+                                            style={{ colorScheme: 'dark' }}
+                                        >
+                                            <option value="">Select category</option>
                                             {['AgriTech', 'EdTech', 'HealthTech', 'CleanTech', 'GovTech', 'LegalTech', 'FinTech', 'Other'].map(c => (
-                                                <option key={c} value={c} style={{ backgroundColor: '#0B1120', color: '#ffffff' }}>{c}</option>
+                                                <option key={c} value={c}>{c}</option>
                                             ))}
                                         </select>
                                     </div>
