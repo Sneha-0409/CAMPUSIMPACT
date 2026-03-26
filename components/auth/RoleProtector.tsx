@@ -25,24 +25,27 @@ export default function RoleProtector({ children }: { children: React.ReactNode 
                 .single();
 
             // AUTO-MAGIC ROLE ASSIGNMENT:
-            // If they just logged in after picking a role on the landing page (saved in localStorage)
+            // 1. Check for intended_role from landing page
             const intendedRole = localStorage.getItem('intended_role');
-            if (intendedRole && !profile?.role) {
-                // Update their profile instantly in the background! (Upsert guarantees creation if they missed it during signup)
-                await supabase.from('profiles').upsert({ id: session.user.id, role: intendedRole as UserRole, id_verified: 'pending' });
-                localStorage.removeItem('intended_role');
+            
+            if (!profile?.role) {
+                const finalRole = (intendedRole || 'student') as UserRole;
+                console.log('No role found, assigning default:', finalRole);
                 
-                // Now they have a role, so let them skip onboarding!
-                router.push('/app');
+                // Update their profile instantly (Upsert guarantees creation)
+                await supabase.from('profiles').upsert({ 
+                    id: session.user.id, 
+                    email: session.user.email,
+                    role: finalRole, 
+                    id_verified: 'pending' 
+                });
+                
+                if (intendedRole) localStorage.removeItem('intended_role');
+                
+                // Refresh or continue
                 setLoading(false);
                 return;
-            }
-
-            // Normal Fallback logic: If no role chosen and no localStorage (e.g. direct link)
-            // if (!profile?.role && pathname !== '/app/onboarding') {
-            //     router.push('/app/onboarding');
-            // } 
-            // // If they have a role, never let them see the onboarding page again
+            }            // // If they have a role, never let them see the onboarding page again
             // else if (profile?.role && pathname === '/app/onboarding') {
             //     router.push(`/app`); 
             // }

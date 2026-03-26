@@ -94,11 +94,15 @@ export default function Navbar() {
                         )
                         : navLinks
                             .filter(link => {
-                                // Faculty/Alumni top nav is completely empty as requested
+                                // Faculty/Alumni Navbar is empty. Students see only Dashboard/Proposals as requested.
+                                // Unified minimalist Navbar for all main roles (Faculty, Alumni, Student) or unknown
                                 if (role === 'faculty' || role === 'alumni') {
-                                    return false;
+                                    return false; // Faculty/Alumni have an empty navbar
+                                } else if (role === 'student' || !role) {
+                                    // Students and unknown roles see Dashboard/Proposals
+                                    return link.label !== 'Treasury' && link.label !== 'Governance';
                                 }
-                                return true;
+                                return true; // Other roles see all links
                             })
                             .map((link) => (
                                 <Link
@@ -178,7 +182,7 @@ export default function Navbar() {
                         <nav className="px-6 py-4 flex flex-col gap-1">
                             {navLinks
                                 .filter(link => {
-                                    if (role === 'faculty' || role === 'alumni') {
+                                    if (role === 'faculty' || role === 'alumni' || role === 'student' || !role) {
                                         return false;
                                     }
                                     return true;

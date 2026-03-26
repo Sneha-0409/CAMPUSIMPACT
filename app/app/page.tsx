@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
     Wallet, FileText, Zap, Trophy, ArrowUpRight,
-    Clock, TrendingUp, Filter, Plus
+    Clock, TrendingUp, Filter, Plus, UserCheck
 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button';
@@ -24,6 +24,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [authChecked, setAuthChecked] = useState(false);
     const [role, setRole] = useState<'student' | 'faculty' | 'alumni' | null>(null);
+    const [isMentor, setIsMentor] = useState(false);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -32,13 +33,27 @@ export default function DashboardPage() {
                 router.push('/auth/login');
                 return;
             }
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+            const { data: profile } = await supabase.from('profiles').select('role, is_mentor').eq('id', session.user.id).single();
             setRole(profile?.role || null);
+            setIsMentor(profile?.is_mentor || false);
             setAuthChecked(true);
         };
         checkAuth();
     }, [router]);
 
+    const handleBecomeMentor = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_mentor: true })
+            .eq('id', session.user.id);
+
+        if (!error) {
+            setIsMentor(true);
+        }
+    };
     if (!authChecked) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -68,13 +83,23 @@ export default function DashboardPage() {
                     </p>
                 </motion.div>
                 <motion.div variants={fadeInUp} className="flex gap-3">
-                    {role !== 'faculty' && role !== 'alumni' && (
+                    {role === 'student' && (
                         <Link href="/app/submit">
                             <PrimaryButton className="gap-2">
                                 <Plus className="w-4 h-4" />
                                 New Proposal
                             </PrimaryButton>
                         </Link>
+                    )}
+                    {role === 'alumni' && (
+                        <PrimaryButton 
+                            className="gap-2" 
+                            onClick={handleBecomeMentor}
+                            disabled={isMentor}
+                        >
+                            <UserCheck className="w-4 h-4" />
+                            {isMentor ? 'Mentor Active' : 'Become Mentor'}
+                        </PrimaryButton>
                     )}
                 </motion.div>
             </motion.div>
@@ -97,8 +122,8 @@ export default function DashboardPage() {
                             displayValue = '1.5x'; displayChange = ''; displayDescription = '';
                         } else if (role === 'alumni') {
                             displayValue = '1.2x'; displayChange = ''; displayDescription = '';
-                        } else if (role === 'student') {
-                            displayValue = '1.0x'; displayChange = ''; displayDescription = '';
+                        } else if (role === 'student' || role === null) {
+                            displayValue = '1x'; displayChange = ''; displayDescription = '';
                         }
                     }
 
@@ -134,7 +159,7 @@ export default function DashboardPage() {
             {/* Activity + Governance snapshot */}
             <div className="grid lg:grid-cols-3 gap-6">
                 {/* Treasury Snapshot */}
-                {role !== 'faculty' && role !== 'alumni' && (
+                {(role !== 'faculty' && role !== 'alumni' && role !== 'student' && role !== null) && (
                     <GlassCard className="p-6 space-y-5">
                         <div className="flex items-center justify-between">
                             <h3 className="text-heading-md font-semibold text-text-primary">Treasury Health</h3>
@@ -246,7 +271,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Governance Snapshot */}
-            {role !== 'faculty' && role !== 'alumni' && (
+            {(role !== 'faculty' && role !== 'alumni' && role !== 'student' && role !== null) && (
                 <GlassCard className="p-8">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                         <div className="space-y-2">
