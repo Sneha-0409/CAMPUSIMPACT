@@ -28,22 +28,17 @@ export default function StudentDashboardPanel({ proposals }: { proposals: Propos
 
     const handleUploadInvoice = async (projectId: string, milestoneIndex: number) => {
         setUploading(`${projectId}-${milestoneIndex}`);
-        
-        // Find the project
         const project = myProjects.find(p => p.id === projectId);
         if (!project) return;
 
-        // Clone and update the milestones array
         const updatedMilestones = [...(project.milestones || [])];
         if (updatedMilestones[milestoneIndex]) {
             updatedMilestones[milestoneIndex].completed = true;
             updatedMilestones[milestoneIndex].completedAt = new Date().toISOString();
         }
 
-        // Simulate IPFS upload delay
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Update Supabase
         const { error } = await supabase
             .from('proposals')
             .update({ milestones: updatedMilestones })
@@ -52,7 +47,6 @@ export default function StudentDashboardPanel({ proposals }: { proposals: Propos
         if (error) {
             alert('Error updating milestone: ' + error.message);
         } else {
-            // Update local state
             setMyProjects(prev => prev.map(p => 
                 p.id === projectId ? { ...p, milestones: updatedMilestones } : p
             ));
@@ -100,8 +94,7 @@ export default function StudentDashboardPanel({ proposals }: { proposals: Propos
                                     const currentMilestoneIndex = milestones.findIndex((m: any) => !m.completed);
                                     const isCompleted = currentMilestoneIndex === -1 && milestones.length > 0;
                                     const currentMilestone = isCompleted ? null : (milestones[currentMilestoneIndex]);
-                                    
-                                    // Calculate progress
+                          
                                     const completedCount = milestones.filter((m: any) => m.completed).length;
                                     const progressPct = milestones.length > 0 ? (completedCount / milestones.length) * 100 : 0;
 
