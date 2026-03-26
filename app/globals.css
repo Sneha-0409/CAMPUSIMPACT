@@ -146,6 +146,9 @@ h4 { font-size: 16px; font-weight: 500; }
     &:focus {
       @apply outline-none border-primary/50 bg-white/[0.06] shadow-glow-indigo;
     }
+    & option {
+      @apply bg-[#111827] text-white; /* Forces Windows/Chrome to render dark dropdowns */
+    }
   }
 
   .sidebar-item {
