@@ -251,7 +251,12 @@ export default function SubmitProposalPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-body-sm text-text-secondary font-medium mb-2">Category</label>
-                                        <select value={form.category} onChange={e => updateField('category', e.target.value)} className="input-field">
+                                        <select 
+                                            value={form.category} 
+                                            onChange={e => updateField('category', e.target.value)} 
+                                            className="input-field bg-[#0B1120] text-white"
+                                            style={{ colorScheme: 'dark' }}
+                                        >
                                             <option value="">Select category</option>
                                             {['AgriTech', 'EdTech', 'HealthTech', 'CleanTech', 'GovTech', 'LegalTech', 'FinTech', 'Other'].map(c => (
                                                 <option key={c} value={c}>{c}</option>
@@ -271,19 +276,19 @@ export default function SubmitProposalPage() {
                             <h2 className="text-heading-lg font-semibold text-text-primary">Funding Request</h2>
                             <div className="space-y-5">
                                 <div>
-                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">Funding Amount (₹ Lakhs)</label>
+                                    <label className="block text-body-sm text-text-secondary font-medium mb-2">Funding Amount (₹)</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-semibold">₹</span>
                                         <input
                                             type="number"
+                                            max="5000000"
                                             value={form.fundingAmount}
                                             onChange={e => updateField('fundingAmount', e.target.value)}
                                             placeholder="0.00"
                                             className="input-field pl-8"
                                         />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-body-sm">Lakhs</span>
                                     </div>
-                                    <p className="text-caption text-text-muted mt-1.5">Maximum: ₹50 Lakhs per proposal</p>
+                                    <p className="text-caption text-text-muted mt-1.5">Maximum: ₹50,00,000 per proposal</p>
                                 </div>
                                 <div>
                                     <label className="block text-body-sm text-text-secondary font-medium mb-2">Disbursement Token</label>
@@ -432,7 +437,7 @@ export default function SubmitProposalPage() {
                                 <ReviewRow label="Project Title" value={form.title || '—'} />
                                 <ReviewRow label="Category" value={form.category || '—'} />
                                 <ReviewRow label="University" value={form.university || '—'} />
-                                <ReviewRow label="Funding Requested" value={`₹${form.fundingAmount || 0} Lakhs in ${form.fundingToken}`} highlight />
+                                <ReviewRow label="Funding Requested" value={`₹${form.fundingAmount || 0} in ${form.fundingToken}`} highlight />
                                 <ReviewRow label="Duration" value={`${form.duration || 0} months`} />
                                 <ReviewRow label="Milestones" value={`${form.milestones.length} defined`} />
                                 <ReviewRow label="Evaluation Q&A" value="Completed" />

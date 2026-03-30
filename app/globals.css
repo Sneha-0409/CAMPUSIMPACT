@@ -30,6 +30,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
 }
 
 body {
@@ -38,7 +39,8 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  antialiased: true;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
@@ -146,6 +148,9 @@ h4 { font-size: 16px; font-weight: 500; }
     &:focus {
       @apply outline-none border-primary/50 bg-white/[0.06] shadow-glow-indigo;
     }
+    & option {
+      @apply bg-[#111827] text-white; /* Forces Windows/Chrome to render dark dropdowns */
+    }
   }
 
   .sidebar-item {
@@ -179,6 +184,7 @@ h4 { font-size: 16px; font-weight: 500; }
       padding: 1px;
       background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(59,130,246,0.2));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
     }
