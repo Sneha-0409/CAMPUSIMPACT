@@ -74,7 +74,7 @@ Make sure you have these installed on your computer:
 ---
 
 ## 🤝 Contributions by:
-Samarth Khare
+Samarth Khare and 
 Sneha
 
 
