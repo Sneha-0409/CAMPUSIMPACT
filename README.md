@@ -36,7 +36,7 @@
 
 ---
 
-##Architecture
+## Architecture
 
 User → Frontend (Next.js) → Smart Contracts (Polygon)
                   → Supabase (Off-chain Data Storage)
