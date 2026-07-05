@@ -130,7 +130,7 @@ npm run dev
 
 CampusImpact DAO was designed and developed during **ORBIX 2026**, the flagship hackathon hosted at **IIIT Delhi**.
 
-Among hundreds of participating teams, the project was selected as one of the **Top 7 Finalists** in web3/blockchai domain for its innovative application of **Blockchain, DAOs, and Web3 technologies** to democratize funding for student-led innovation.
+Among hundreds of participating teams, the project was selected as one of the **Top 7 Finalists** in web3/blockchain domain for its innovative application of **Blockchain, DAOs, and Web3 technologies** to democratize funding for student-led innovation.
 
 ---
 
